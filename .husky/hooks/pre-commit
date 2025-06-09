@@ -1,0 +1,7 @@
+#!/bin/sh
+
+markdownlint .
+codespell .
+yamllint .
+go test ./...
+
