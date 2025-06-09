@@ -43,7 +43,7 @@ var Me = Person {
 </td><td>
 
 ```go
-// ✅ Name, Surnsme, Birthdate
+// ✅ Name, Surname, Birthdate
 var Me = Person {
   Name: "John",
   Surname: "Doe",
