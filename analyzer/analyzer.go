@@ -13,7 +13,7 @@ import (
 func NewAnalyzer() *analysis.Analyzer {
 	a := &analysis.Analyzer{
 		Name:     "structfieldinitorder",
-		Doc:      "this linter checks whether when a struct is instantiated, the fields order follows the same order as in the struct declaration.",
+		Doc:      "this linter checks whether when a struct is instantiated, the fields order follows the same order as in the struct declaration.", //nolint:lll // url
 		URL:      "https://github.com/manuelarte/structfieldinitorder",
 		Run:      run,
 		Requires: []*analysis.Analyzer{inspect.Analyzer},
@@ -29,11 +29,11 @@ func run(pass *analysis.Pass) (any, error) {
 		return nil, nil
 	}
 
-	sh := internal.NewStructHolder()
+	sh := internal.NewStructsHolder()
 
 	nodeFilter := []ast.Node{
 		(*ast.TypeSpec)(nil),
-		//TODO(manuelarte): missing struct initialization
+		// TODO(manuelarte): missing struct initialization
 	}
 
 	insp.Preorder(nodeFilter, func(n ast.Node) {

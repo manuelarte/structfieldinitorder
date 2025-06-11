@@ -1,28 +1,28 @@
 package internal
 
 import (
-	"cmp"
 	"go/ast"
-	"slices"
 
 	"golang.org/x/tools/go/analysis"
 )
 
 // StructsHolder contains all the information of the declared structs and structs initialization.
 type StructsHolder struct {
-	// The struct declaration
-	Struct *ast.TypeSpec
+	// All the struct declarations
+	structs map[string]*ast.TypeSpec
 }
 
 func NewStructsHolder() *StructsHolder {
-	return &StructsHolder{}
+	structs := make(map[string]*ast.TypeSpec)
+	return &StructsHolder{
+		structs: structs,
+	}
 }
 
 func (sh *StructsHolder) AddTypeSpec(tp *ast.TypeSpec) {
-	// TODO(manuelarte): to be done
+	sh.structs[tp.Name.Name] = tp
 }
 
 func (sh *StructsHolder) Analyze(pass *analysis.Pass) {
 	// TODO(manuelarte): to be done
 }
-
