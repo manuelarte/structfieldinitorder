@@ -1,8 +1,8 @@
 package main
 
 import (
-	"imports/structone"
-	"imports/structtwo"
+	"github.com/manuelarte/structfieldinitorder/testdata/src/imports/structone"
+	"github.com/manuelarte/structfieldinitorder/testdata/src/imports/structtwo"
 	"time"
 )
 
