@@ -1,8 +1,11 @@
 package analyzer
 
 import (
+	"context"
+	"fmt"
 	"go/ast"
 
+	"github.com/ldez/grignotin/gomod"
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/ast/inspector"
@@ -23,6 +26,12 @@ func NewAnalyzer() *analysis.Analyzer {
 }
 
 func run(pass *analysis.Pass) (any, error) {
+	info, err := gomod.GetModuleInfo(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(info)
+
 	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !found {
 		//nolint:nilnil // impossible case.
@@ -33,12 +42,15 @@ func run(pass *analysis.Pass) (any, error) {
 
 	// TODO(manuelarte): I think this does not work in this linter because I need the package.
 	nodeFilter := []ast.Node{
+		(*ast.File)(nil),
 		(*ast.TypeSpec)(nil),
 		(*ast.CompositeLit)(nil),
 	}
 
 	insp.Preorder(nodeFilter, func(n ast.Node) {
 		switch node := n.(type) {
+		case *ast.File:
+			sh.SetFile(node)
 		case *ast.TypeSpec:
 			sh.AddTypeSpec(node)
 		case *ast.CompositeLit:

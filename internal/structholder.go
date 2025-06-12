@@ -8,6 +8,8 @@ import (
 
 // StructsHolder contains all the information of the declared structs and structs initialization.
 type StructsHolder struct {
+	// File
+	file *ast.File
 	// All the struct declarations
 	structsDecl map[string]*ast.TypeSpec
 	// All the struct instantiation
@@ -21,6 +23,10 @@ func NewStructsHolder() *StructsHolder {
 		structsDecl: structsDecl,
 		structsInst: structsInst,
 	}
+}
+
+func (sh *StructsHolder) SetFile(f *ast.File) {
+	sh.file = f
 }
 
 func (sh *StructsHolder) AddTypeSpec(tp *ast.TypeSpec) {
