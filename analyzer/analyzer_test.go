@@ -9,11 +9,15 @@ import (
 func TestAnalyzer(t *testing.T) {
 	testCases := []struct {
 		desc     string
-		patterns string
+		patterns []string
 	}{
 		{
 			desc:     "default",
-			patterns: "simple",
+			patterns: []string{"simple"},
+		},
+		{
+			desc:     "imports",
+			patterns: []string{"imports", "imports/structone", "imports/structtwo"},
 		},
 	}
 
@@ -21,7 +25,7 @@ func TestAnalyzer(t *testing.T) {
 		t.Run(test.desc, func(t *testing.T) {
 			a := NewAnalyzer()
 
-			analysistest.Run(t, analysistest.TestData(), a, test.patterns)
+			analysistest.Run(t, analysistest.TestData(), a, test.patterns...)
 		})
 	}
 }

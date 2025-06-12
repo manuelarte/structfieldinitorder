@@ -31,15 +31,18 @@ func run(pass *analysis.Pass) (any, error) {
 
 	sh := internal.NewStructsHolder()
 
+	// TODO(manuelarte): I think this does not work in this linter because I need the package.
 	nodeFilter := []ast.Node{
 		(*ast.TypeSpec)(nil),
-		// TODO(manuelarte): missing struct initialization
+		(*ast.CompositeLit)(nil),
 	}
 
 	insp.Preorder(nodeFilter, func(n ast.Node) {
 		switch node := n.(type) {
 		case *ast.TypeSpec:
 			sh.AddTypeSpec(node)
+		case *ast.CompositeLit:
+			sh.AddCompositeLit(node)
 		}
 	})
 

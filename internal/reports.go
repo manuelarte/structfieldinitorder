@@ -7,9 +7,9 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-func reportStructFieldsNotInOrder(pass *analysis.Pass, structSpec *ast.TypeSpec) {
+func reportStructFieldsNotInOrder(pass *analysis.Pass, structSpec *ast.TypeSpec, structInit *StructInit) {
 	pass.Report(analysis.Diagnostic{
-		//Pos: structSpec.Pos(), // TODO(manuelarte): it should be the instantiation
+		Pos: structInit.Lbrace,
 		Message: fmt.Sprintf("fields for struct %q are not instantiated in order",
 			structSpec.Name),
 		URL: "https://github.com/manuelarte/structfieldinitorder?tab=readme-ov-file",

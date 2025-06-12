@@ -8,7 +8,7 @@ type PersonComments struct {
 	Birthdate time.Time
 }
 
-func main() {
+func mainComments() {
 	_ = PersonComments{ // want `fields for struct "PersonComments" are not instantiated in order`
 		// the birthdate is now
 		Birthdate: time.Now(),

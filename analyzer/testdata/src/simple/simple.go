@@ -10,8 +10,14 @@ type Person struct {
 	Birthdate time.Time
 }
 
-func main() {
+func mainSimple() {
 	_ = Person{ // want `fields for struct "Person" are not instantiated in order`
+		Birthdate: time.Now(),
+		Surname:   "Doe",
+		Name:      "John",
+	}
+
+	_ = &Person{ // want `fields for struct "Person" are not instantiated in order`
 		Birthdate: time.Now(),
 		Surname:   "Doe",
 		Name:      "John",

@@ -9,18 +9,28 @@ import (
 // StructsHolder contains all the information of the declared structs and structs initialization.
 type StructsHolder struct {
 	// All the struct declarations
-	structs map[string]*ast.TypeSpec
+	structsDecl map[string]*ast.TypeSpec
+	// All the struct instantiation
+	structsInst map[string]*StructInit
 }
 
 func NewStructsHolder() *StructsHolder {
-	structs := make(map[string]*ast.TypeSpec)
+	structsDecl := make(map[string]*ast.TypeSpec)
+	structsInst := make(map[string]*StructInit)
 	return &StructsHolder{
-		structs: structs,
+		structsDecl: structsDecl,
+		structsInst: structsInst,
 	}
 }
 
 func (sh *StructsHolder) AddTypeSpec(tp *ast.TypeSpec) {
-	sh.structs[tp.Name.Name] = tp
+	sh.structsDecl[tp.Name.Name] = tp
+}
+
+func (sh *StructsHolder) AddCompositeLit(cl *ast.CompositeLit) {
+	if si, ok := NewStructInit(cl); ok {
+		sh.structsInst[si.GetIdent().Name] = si
+	}
 }
 
 func (sh *StructsHolder) Analyze(pass *analysis.Pass) {
