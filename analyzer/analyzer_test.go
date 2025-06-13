@@ -19,7 +19,7 @@ func TestAnalyzer(t *testing.T) {
 		//{
 		//	desc:     "imports",
 		//	patterns: "imports/...",
-		//},
+		// },
 	}
 
 	for _, test := range testCases {
