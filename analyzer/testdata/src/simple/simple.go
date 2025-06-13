@@ -22,4 +22,10 @@ func mainSimple() {
 		Surname:   "Doe",
 		Name:      "John",
 	}
+
+	_ = &Person{
+		Name:      "John",
+		Surname:   "Doe",
+		Birthdate: time.Now(),
+	}
 }

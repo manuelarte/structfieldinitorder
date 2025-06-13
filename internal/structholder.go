@@ -11,26 +11,25 @@ import (
 
 // StructsHolder contains all the information of the declared structs and structs initialization.
 type StructsHolder struct {
-	// Module name
+	// module name.
 	module string
-	// File
-	file *ast.File
-	// imports used by the file indexed by alias.
+	file   *ast.File
+	// imports used by the file, indexed by alias.
 	aliasImports map[string]string
-	// All the struct declarations.
-	structsDecl map[uniqueIdentifierStructKey]*ast.TypeSpec
-	// All the struct instantiation.
-	structsInst map[uniqueIdentifierStructKey]*StructInit
+	// all the struct specs that will be checked.
+	structsSpec map[uniqueIdentifierStructKey]*StructSpec
+	// all the struct instantiation that will be checked.
+	structsInst map[uniqueIdentifierStructKey][]*StructInst
 }
 
 func NewStructsHolder(module *analysis.Module) *StructsHolder {
 	aliasImports := make(map[string]string)
-	structsDecl := make(map[uniqueIdentifierStructKey]*ast.TypeSpec)
-	structsInst := make(map[uniqueIdentifierStructKey]*StructInit)
+	structsSpec := make(map[uniqueIdentifierStructKey]*StructSpec)
+	structsInst := make(map[uniqueIdentifierStructKey][]*StructInst)
 	return &StructsHolder{
 		module:       module.Path,
 		aliasImports: aliasImports,
-		structsDecl:  structsDecl,
+		structsSpec:  structsSpec,
 		structsInst:  structsInst,
 	}
 }
@@ -42,7 +41,6 @@ func (sh *StructsHolder) SetFile(f *ast.File) {
 }
 
 func (sh *StructsHolder) AddImportSpec(is *ast.ImportSpec) {
-	// TODO(manuelarte): check for alias, and if not, get the latest name after /
 	if is.Path != nil && is.Path.Kind == token.STRING {
 		// remove ""
 		alias := is.Path.Value[1 : len(is.Path.Value)-1]
@@ -58,25 +56,32 @@ func (sh *StructsHolder) AddImportSpec(is *ast.ImportSpec) {
 }
 
 func (sh *StructsHolder) AddTypeSpec(tp *ast.TypeSpec) {
-	if _, ok := tp.Type.(*ast.StructType); ok {
+	if ss, ok := NewStructSpec(sh.file.Name.Name, tp); ok {
 		importPath := fmt.Sprintf("%s/%s", sh.module, sh.file.Name)
-		sh.structsDecl[uniqueIdentifierStructKey{importPath: importPath, structName: tp.Name.Name}] = tp
+		sh.structsSpec[uniqueIdentifierStructKey{importPath: importPath, structName: ss.key.name}] = ss
 	}
 }
 
 func (sh *StructsHolder) AddCompositeLit(cl *ast.CompositeLit) {
 	if si, ok := NewStructInit(sh.file.Name.Name, cl); ok {
-		// TODO(manuelarte): substitute the pkg alias with the unique identifier
-		importPath := sh.aliasImports[si.key.packageAlias]
-		sh.structsInst[uniqueIdentifierStructKey{
-			importPath: importPath,
-			structName: si.key.name,
-		}] = si
+		if importPath, exists := sh.aliasImports[si.key.pkgAlias]; exists {
+			key := uniqueIdentifierStructKey{
+				importPath: importPath,
+				structName: si.key.name,
+			}
+			sh.structsInst[key] = append(sh.structsInst[key], si)
+		}
 	}
 }
 
 func (sh *StructsHolder) Analyze(pass *analysis.Pass) {
-	// TODO(manuelarte): to be done
+	for key, structInsts := range sh.structsInst {
+		if structSpec, ok := sh.structsSpec[key]; ok {
+			for _, structInst := range structInsts {
+				reportIfStructFieldsNotInOrder(pass, structSpec, structInst)
+			}
+		}
+	}
 }
 
 type uniqueIdentifierStructKey struct {

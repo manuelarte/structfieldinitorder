@@ -1,3 +1,3 @@
-module github.com/manuelarte/structfieldinitorder/testdata/src/imports
+module imports
 
 go 1.23
