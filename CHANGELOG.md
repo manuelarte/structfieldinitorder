@@ -9,7 +9,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- v1.1 Brazilian Portuguese translation.
-- v1.1 German Translation
-- v1.1 Spanish translation.
-- v1.1 Italian translation.
+- Detect fields not instantiated in order.
