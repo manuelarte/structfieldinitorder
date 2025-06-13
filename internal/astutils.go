@@ -32,6 +32,7 @@ func NewStructInit(pkgName string, cl *ast.CompositeLit) (*StructInst, bool) {
 func (si *StructInst) GetKeyValueExpr() []*ast.KeyValueExpr {
 	kv := make([]*ast.KeyValueExpr, len(si.Elts))
 	for i, elt := range si.Elts {
+		//nolint:errcheck // already checked
 		kv[i] = elt.(*ast.KeyValueExpr)
 	}
 	return kv
@@ -89,6 +90,7 @@ func NewStructSpec(pkgName string, ts *ast.TypeSpec) (*StructSpec, bool) {
 }
 
 func (si *StructSpec) GetStructType() *ast.StructType {
+	//nolint:errcheck // already checked
 	return si.Type.(*ast.StructType)
 }
 
