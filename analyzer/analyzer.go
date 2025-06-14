@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/types"
 	"maps"
+	"sync"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -13,6 +14,7 @@ import (
 )
 
 type structFieldInitOrder struct {
+	mu sync.RWMutex
 	// all the struct specs of the codebase.
 	structsSpec map[internal.UniqueIdentifierStructKey]*internal.StructSpec
 	// analysis.Pass and struct instantiated indexed by package.
@@ -65,6 +67,8 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 		}
 	})
 
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	maps.Copy(s.structsSpec, sh.StructsSpec())
 	if len(sh.StructInst()) > 0 {
 		if _, ok := s.stateIndexByPkg[pass.Pkg]; !ok {
