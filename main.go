@@ -1,11 +1,11 @@
 package main
 
 import (
-	"golang.org/x/tools/go/analysis/multichecker"
+	"golang.org/x/tools/go/analysis/singlechecker"
 
 	"github.com/manuelarte/structfieldinitorder/analyzer"
 )
 
 func main() {
-	multichecker.Main(analyzer.NewAnalyzer())
+	singlechecker.Main(analyzer.NewAnalyzer())
 }

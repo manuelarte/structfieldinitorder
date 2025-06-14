@@ -15,10 +15,10 @@ func TestAnalyzer(t *testing.T) {
 			desc:     "default",
 			patterns: "simple",
 		},
-		//{
-		//	desc:     "imports",
-		//	patterns: "imports/...",
-		// },
+		{
+			desc:     "imports",
+			patterns: "imports/...",
+		},
 	}
 
 	for _, test := range testCases {
