@@ -15,11 +15,10 @@ func TestAnalyzer(t *testing.T) {
 			desc:     "default",
 			patterns: "simple",
 		},
-		// not working, but because it's not parsing all the content first
-		//{
-		//	desc:     "imports",
-		//	patterns: "imports/...",
-		// },
+		{
+			desc:     "imports",
+			patterns: "imports/...",
+		},
 	}
 
 	for _, test := range testCases {

@@ -2,6 +2,8 @@ package analyzer
 
 import (
 	"go/ast"
+	"go/types"
+	"maps"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -10,28 +12,39 @@ import (
 	"github.com/manuelarte/structfieldinitorder/internal"
 )
 
-func NewAnalyzer() *analysis.Analyzer {
-	a := &analysis.Analyzer{
-		Name:     "structfieldinitorder",
-		Doc:      "this linter checks whether when a struct is instantiated, the fields order follows the same order as in the struct declaration.", //nolint:lll // url
-		URL:      "https://github.com/manuelarte/structfieldinitorder",
-		Run:      run,
-		Requires: []*analysis.Analyzer{inspect.Analyzer},
-	}
-
-	return a
+type structFieldInitOrder struct {
+	// all the struct specs of the codebase.
+	structsSpec map[internal.UniqueIdentifierStructKey]*internal.StructSpec
+	// analysis.Pass and struct instantiated indexed by package.
+	stateIndexByPkg map[*types.Package]state
 }
 
-func run(pass *analysis.Pass) (any, error) {
+func NewAnalyzer() *analysis.Analyzer {
+	structsSpec := make(map[internal.UniqueIdentifierStructKey]*internal.StructSpec)
+	st := make(map[*types.Package]state)
+	s := structFieldInitOrder{
+		structsSpec:     structsSpec,
+		stateIndexByPkg: st,
+	}
+
+	return &analysis.Analyzer{
+		Name:     "structfieldinitorder",
+		Doc:      "This linter checks whether when a struct is instantiated, the fields order follows the same order as in the struct declaration.", //nolint:lll // url
+		URL:      "https://github.com/manuelarte/structfieldinitorder",
+		Run:      s.run,
+		Requires: []*analysis.Analyzer{inspect.Analyzer},
+	}
+}
+
+func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !found {
 		//nolint:nilnil // impossible case.
 		return nil, nil
 	}
 
-	sh := internal.NewStructsHolder(pass.Module)
+	sh := internal.NewStructsHolder(pass.Pkg.Path())
 
-	// TODO(manuelarte): I think this does not work in this linter because I need the package.
 	nodeFilter := []ast.Node{
 		(*ast.File)(nil),
 		(*ast.ImportSpec)(nil),
@@ -52,8 +65,43 @@ func run(pass *analysis.Pass) (any, error) {
 		}
 	})
 
-	sh.Analyze(pass)
+	maps.Copy(s.structsSpec, sh.StructsSpec())
+	if len(sh.StructInst()) > 0 {
+		if _, ok := s.stateIndexByPkg[pass.Pkg]; !ok {
+			s.stateIndexByPkg[pass.Pkg] = state{
+				pass:        pass,
+				structInsts: sh.StructInst(),
+			}
+		} else {
+			st := s.stateIndexByPkg[pass.Pkg]
+			st.copy(sh.StructInst())
+		}
+	}
+
+	s.analyze()
 
 	//nolint:nilnil //any, error
 	return nil, nil
+}
+
+func (s *structFieldInitOrder) analyze() {
+	for _, st := range s.stateIndexByPkg {
+		for key, structInsts := range st.structInsts {
+			if structSpec, ok := s.structsSpec[key]; ok {
+				for _, structInst := range structInsts {
+					internal.ReportIfStructFieldsNotInOrder(st.pass, structSpec, structInst)
+				}
+				delete(st.structInsts, key)
+			}
+		}
+	}
+}
+
+type state struct {
+	pass        *analysis.Pass
+	structInsts map[internal.UniqueIdentifierStructKey][]*internal.StructInst
+}
+
+func (s *state) copy(c map[internal.UniqueIdentifierStructKey][]*internal.StructInst) {
+	maps.Copy(s.structInsts, c)
 }
