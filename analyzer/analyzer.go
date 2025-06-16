@@ -45,7 +45,7 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 		return nil, nil
 	}
 
-	sh := internal.NewStructsHolder(pass.Pkg.Path())
+	fh := internal.NewStructsHolder(pass.Pkg.Path())
 
 	nodeFilter := []ast.Node{
 		(*ast.File)(nil),
@@ -57,30 +57,32 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 	insp.Preorder(nodeFilter, func(n ast.Node) {
 		switch node := n.(type) {
 		case *ast.File:
-			sh.SetFile(node)
+			fh.SetFile(node)
 		case *ast.ImportSpec:
-			sh.AddImportSpec(node)
+			fh.AddImportSpec(node)
 		case *ast.TypeSpec:
-			sh.AddTypeSpec(node)
+			fh.AddTypeSpec(node)
 		case *ast.CompositeLit:
-			sh.AddCompositeLit(node)
+			fh.AddCompositeLit(node)
 		}
 	})
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	maps.Copy(s.structsSpec, sh.StructsSpec())
-	if len(sh.StructInst()) > 0 {
+	maps.Copy(s.structsSpec, fh.StructsSpec())
+	if len(fh.StructInst()) > 0 {
 		if _, ok := s.stateIndexByPkg[pass.Pkg]; !ok {
 			s.stateIndexByPkg[pass.Pkg] = state{
 				pass:        pass,
-				structInsts: sh.StructInst(),
+				structInsts: fh.StructInst(),
 			}
 		} else {
 			st := s.stateIndexByPkg[pass.Pkg]
-			st.copy(sh.StructInst())
+			st.copy(fh.StructInst())
 		}
 	}
+
+	fh.CheckDotImports()
 
 	s.analyze()
 
