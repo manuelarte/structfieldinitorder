@@ -57,6 +57,8 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 		(*ast.CompositeLit)(nil),
 	}
 
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	importsSpec := make([]*ast.ImportSpec, 0)
 	insp.Preorder(nodeFilter, func(n ast.Node) {
 		switch node := n.(type) {
@@ -66,8 +68,6 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 			importsSpec = append(importsSpec, node)
 		case *ast.TypeSpec:
 			{
-				s.mu.Lock()
-				defer s.mu.Unlock()
 				if ss, ok := internal.NewStructSpecs(pass, node); ok {
 					s.structSpecsIndexedByKey[ss.UniqueKey] = ss
 				}
@@ -76,8 +76,6 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 		case *ast.CompositeLit:
 			if si, ok := internal.NewIStructInst(pass.Pkg.Path(), importsSpec, node); ok {
 				{
-					s.mu.Lock()
-					defer s.mu.Unlock()
 					// add si
 					if pkgKey, pkgFound := s.structInstIndexedByPkg[pass.Pkg]; pkgFound {
 						pkgKey.append(si)
@@ -91,11 +89,8 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 			}
 		}
 	})
-
 	importsSpec = nil
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.analyze()
 
 	//nolint:nilnil //any, error
@@ -112,6 +107,12 @@ func (s *structFieldInitOrder) analyze() {
 				structUniqueIdentifierKey = si.GetStructUniqueIdentifierKey()
 			case *internal.StructInstInSamePkgStructDecl:
 				structUniqueIdentifierKey = si.GetStructUniqueIdentifierKey()
+			case *internal.StructInstWithDotImports:
+				structSpecs, ok := si.GetMatchingStructSpecs(s.structSpecsIndexedByKey)
+				if !ok {
+					continue
+				}
+				structUniqueIdentifierKey = structSpecs.UniqueKey
 			default:
 				continue
 			}

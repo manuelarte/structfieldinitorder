@@ -1,10 +1,15 @@
 package main
 
 import (
-	. "imports/structone"
-	. "imports/structtwo"
+	. "dotimports/structone"
+	. "dotimports/structtwo"
 	"time"
 )
+
+type MyStruct struct {
+	Hello string
+	Bye   string
+}
 
 func main() {
 	_ = StructOne{ // want `fields for struct "StructOne" are not instantiated in order`
@@ -17,6 +22,11 @@ func main() {
 		Surname:   "",
 		Name:      "",
 		BirthDate: time.Time{},
+	}
+
+	_ = MyStruct{ // want `fields for struct "MyStruct" are not instantiated in order`
+		Bye:   "adios",
+		Hello: "hola",
 	}
 
 }

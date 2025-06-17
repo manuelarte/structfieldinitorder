@@ -1,3 +1,3 @@
-module imports
+module dotimports
 
 go 1.23

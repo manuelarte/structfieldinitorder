@@ -14,6 +14,36 @@ type IStructInst interface {
 }
 
 func NewIStructInst(pkgPath string, importsSpec []*ast.ImportSpec, cl *ast.CompositeLit) (IStructInst, bool) {
+	bsi, ok := newBaseStructInst(cl)
+	if !ok {
+		return nil, false
+	}
+	switch cl.Type.(type) {
+	case *ast.Ident:
+		// this means the struct is either declared in the same package or there are dot imports.
+		dotImports := make([]*ast.ImportSpec, 0, len(importsSpec))
+		for _, spec := range importsSpec {
+			if spec.Name != nil && spec.Name.Name == "." {
+				dotImports = append(dotImports, spec)
+			}
+		}
+		if len(dotImports) == 0 {
+			return newStructInstInSamePkgStructDecl(pkgPath, bsi)
+		}
+		return newStructInstWithDotImports(pkgPath, dotImports, bsi)
+	case *ast.SelectorExpr:
+		// this means the struct is declared in a different package
+		return newStructInstWithAlias(importsSpec, bsi)
+	default:
+		return nil, false
+	}
+}
+
+type baseStructInst struct {
+	*ast.CompositeLit
+}
+
+func newBaseStructInst(cl *ast.CompositeLit) (*baseStructInst, bool) {
 	if len(cl.Elts) == 0 {
 		return nil, false
 	}
@@ -22,43 +52,80 @@ func NewIStructInst(pkgPath string, importsSpec []*ast.ImportSpec, cl *ast.Compo
 			return nil, false
 		}
 	}
-	switch cl.Type.(type) {
-	case *ast.Ident:
-		// TODO(manuelarte): case in which either the struct is declared in the same package or it's using a dot import.
-		return newStructInstInSamePkgStructDecl(pkgPath, cl)
 
-	case *ast.SelectorExpr:
-		// this means the struct is declared in a different package
-		return newStructInstWithAlias(importsSpec, cl)
-	default:
-		return nil, false
+	return &baseStructInst{
+		cl,
+	}, true
+}
+
+func (si *baseStructInst) GetFieldNames() []string {
+	names := make([]string, 0)
+	kvs := si.getKeyValueExpr()
+	for _, kv := range kvs {
+		if ident, ok := kv.Key.(*ast.Ident); ok {
+			names = append(names, ident.Name)
+		}
 	}
+	return names
 }
 
-type StructInstWithAlias struct {
-	*ast.CompositeLit
-
-	// Name of the struct
-	Name string
-	// ImportSpec that matches the pkg alias.
-	ImportSpec *ast.ImportSpec
+func (si *baseStructInst) getKeyValueExpr() []*ast.KeyValueExpr {
+	kv := make([]*ast.KeyValueExpr, len(si.Elts))
+	for i, elt := range si.Elts {
+		//nolint:errcheck // already checked
+		kv[i] = elt.(*ast.KeyValueExpr)
+	}
+	return kv
 }
+
+func (*baseStructInst) x() {}
+
+type (
+	StructInstWithAlias struct {
+		*baseStructInst
+
+		// Name of the struct.
+		Name string
+		// ImportSpec that matches the pkg alias.
+		ImportSpec *ast.ImportSpec
+	}
+
+	StructInstInSamePkgStructDecl struct {
+		*baseStructInst
+
+		// Name of the struct.
+		Name string
+		// ImportPath of the pkg.
+		ImportPath string
+	}
+
+	StructInstWithDotImports struct {
+		*baseStructInst
+
+		// Name of the struct.
+		Name string
+		// ImportPath of the pkg.
+		ImportPath string
+		// Dot Import Specs, contains all the dot imports of the file where the struct was instantiated.
+		DotImports []*ast.ImportSpec
+	}
+)
 
 func newStructInstWithAlias(
 	importsSpec []*ast.ImportSpec,
-	cl *ast.CompositeLit,
+	si *baseStructInst,
 ) (*StructInstWithAlias, bool) {
 	//nolint: nestif // I may remove the defensive programming type check of ast.SelectorExpr
-	if selectorExpr, ok := cl.Type.(*ast.SelectorExpr); ok {
+	if selectorExpr, ok := si.Type.(*ast.SelectorExpr); ok {
 		if xIdent, isXIdent := selectorExpr.X.(*ast.Ident); isXIdent {
 			pkgAlias := xIdent.Name
 			for _, is := range importsSpec {
 				if importAlias, found := getPkgImportAlias(is); found {
 					if importAlias == pkgAlias {
 						return &StructInstWithAlias{
-							CompositeLit: cl,
-							Name:         selectorExpr.Sel.Name,
-							ImportSpec:   is,
+							baseStructInst: si,
+							Name:           selectorExpr.Sel.Name,
+							ImportSpec:     is,
 						}, true
 					}
 				}
@@ -77,46 +144,15 @@ func (si *StructInstWithAlias) GetStructUniqueIdentifierKey() StructUniqueIdenti
 	}
 }
 
-func (si *StructInstWithAlias) GetFieldNames() []string {
-	names := make([]string, 0)
-	kvs := si.getKeyValueExpr()
-	for _, kv := range kvs {
-		if ident, ok := kv.Key.(*ast.Ident); ok {
-			names = append(names, ident.Name)
-		}
-	}
-	return names
-}
-
-func (si *StructInstWithAlias) getKeyValueExpr() []*ast.KeyValueExpr {
-	kv := make([]*ast.KeyValueExpr, len(si.Elts))
-	for i, elt := range si.Elts {
-		//nolint:errcheck // already checked
-		kv[i] = elt.(*ast.KeyValueExpr)
-	}
-	return kv
-}
-
-func (*StructInstWithAlias) x() {}
-
-type StructInstInSamePkgStructDecl struct {
-	*ast.CompositeLit
-
-	// Name of the struct
-	Name string
-	// ImportPath of the pkg
-	ImportPath string
-}
-
 func newStructInstInSamePkgStructDecl(
 	pkgPath string,
-	cl *ast.CompositeLit,
+	si *baseStructInst,
 ) (*StructInstInSamePkgStructDecl, bool) {
-	if ident, ok := cl.Type.(*ast.Ident); ok {
+	if ident, ok := si.Type.(*ast.Ident); ok {
 		return &StructInstInSamePkgStructDecl{
-			CompositeLit: cl,
-			Name:         ident.Name,
-			ImportPath:   pkgPath,
+			baseStructInst: si,
+			Name:           ident.Name,
+			ImportPath:     pkgPath,
 		}, true
 	}
 	return nil, false
@@ -130,27 +166,43 @@ func (si *StructInstInSamePkgStructDecl) GetStructUniqueIdentifierKey() StructUn
 	}
 }
 
-func (si *StructInstInSamePkgStructDecl) GetFieldNames() []string {
-	names := make([]string, 0)
-	kvs := si.getKeyValueExpr()
-	for _, kv := range kvs {
-		if ident, ok := kv.Key.(*ast.Ident); ok {
-			names = append(names, ident.Name)
+func newStructInstWithDotImports(
+	pkgPath string,
+	dotImports []*ast.ImportSpec,
+	si *baseStructInst,
+) (*StructInstWithDotImports, bool) {
+	if ident, ok := si.Type.(*ast.Ident); ok {
+		return &StructInstWithDotImports{
+			baseStructInst: si,
+			Name:           ident.Name,
+			ImportPath:     pkgPath,
+			DotImports:     dotImports,
+		}, true
+	}
+	return nil, false
+}
+
+func (si *StructInstWithDotImports) GetMatchingStructSpecs(structSpecsIndexed map[StructUniqueIdentifierKey]*StructSpecs) (*StructSpecs, bool) {
+	// TODO(manuelarte): TODO
+	// check pkgpath first
+	if ss, ok := structSpecsIndexed[StructUniqueIdentifierKey{
+		Pkg:  si.ImportPath,
+		Name: si.Name,
+	}]; ok {
+		return ss, true
+	}
+	for _, importSpec := range si.DotImports {
+		importPath, foundImportPath := getPkgImportPath(importSpec)
+		if !foundImportPath {
+			continue
+		}
+		key := StructUniqueIdentifierKey{Pkg: importPath, Name: si.Name}
+		if ss, ok := structSpecsIndexed[key]; ok {
+			return ss, true
 		}
 	}
-	return names
+	return &StructSpecs{}, false
 }
-
-func (si *StructInstInSamePkgStructDecl) getKeyValueExpr() []*ast.KeyValueExpr {
-	kv := make([]*ast.KeyValueExpr, len(si.Elts))
-	for i, elt := range si.Elts {
-		//nolint:errcheck // already checked
-		kv[i] = elt.(*ast.KeyValueExpr)
-	}
-	return kv
-}
-
-func (*StructInstInSamePkgStructDecl) x() {}
 
 func getPkgImportAlias(is *ast.ImportSpec) (string, bool) {
 	if is.Path != nil && is.Path.Kind == token.STRING {
