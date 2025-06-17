@@ -7,18 +7,18 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-func ReportIfStructFieldsNotInOrder(pass *analysis.Pass, structSpec *StructSpec, structInit *StructInst) {
-	instantiatedFieldNames := structInit.GetFieldNames()
-	expectedFieldOrder := slices.DeleteFunc(structSpec.GetFieldNames(), func(s string) bool {
+func ReportIfStructFieldsNotInOrder(pass *analysis.Pass, structSpecs *StructSpecs, si IStructInst) {
+	instantiatedFieldNames := si.GetFieldNames()
+	expectedFieldOrder := slices.DeleteFunc(structSpecs.GetFieldNames(), func(s string) bool {
 		return !slices.Contains(instantiatedFieldNames, s)
 	})
 	for i := range instantiatedFieldNames {
 		if instantiatedFieldNames[i] != expectedFieldOrder[i] {
 			pass.Report(analysis.Diagnostic{
-				Pos: structInit.Pos(),
-				End: structInit.End(),
+				Pos: si.Pos(),
+				End: si.End(),
 				Message: fmt.Sprintf("fields for struct %q are not instantiated in order",
-					structSpec.Name),
+					structSpecs.Name),
 				URL: "https://github.com/manuelarte/structfieldinitorder?tab=readme-ov-file",
 				// TODO(manuelarte): propose fix
 			})
