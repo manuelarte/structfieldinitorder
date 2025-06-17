@@ -48,6 +48,7 @@ func newStructInstWithAlias(
 	importsSpec []*ast.ImportSpec,
 	cl *ast.CompositeLit,
 ) (*StructInstWithAlias, bool) {
+	//nolint: nestif // I may remove the defensive programming type check of ast.SelectorExpr
 	if selectorExpr, ok := cl.Type.(*ast.SelectorExpr); ok {
 		if xIdent, isXIdent := selectorExpr.X.(*ast.Ident); isXIdent {
 			pkgAlias := xIdent.Name
