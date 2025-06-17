@@ -108,10 +108,7 @@ func (s *structFieldInitOrder) analyze() {
 			case *internal.StructInstInSamePkgStructDecl:
 				structUniqueIdentifierKey = si.GetStructUniqueIdentifierKey()
 			case *internal.StructInstWithDotImports:
-				structSpecs, ok := si.GetMatchingStructSpecs(s.structSpecsIndexedByKey)
-				if !ok {
-					continue
-				}
+				structSpecs, _ := si.GetMatchingStructSpecs(s.structSpecsIndexedByKey)
 				structUniqueIdentifierKey = structSpecs.UniqueKey
 			default:
 				continue

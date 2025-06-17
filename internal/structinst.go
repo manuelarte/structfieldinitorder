@@ -182,9 +182,10 @@ func newStructInstWithDotImports(
 	return nil, false
 }
 
-func (si *StructInstWithDotImports) GetMatchingStructSpecs(structSpecsIndexed map[StructUniqueIdentifierKey]*StructSpecs) (*StructSpecs, bool) {
-	// TODO(manuelarte): TODO
-	// check pkgpath first
+func (si *StructInstWithDotImports) GetMatchingStructSpecs(
+	structSpecsIndexed map[StructUniqueIdentifierKey]*StructSpecs,
+) (*StructSpecs, bool) {
+	// check pkgPath first
 	if ss, ok := structSpecsIndexed[StructUniqueIdentifierKey{
 		Pkg:  si.ImportPath,
 		Name: si.Name,
