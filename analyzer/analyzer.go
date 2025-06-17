@@ -3,7 +3,6 @@ package analyzer
 import (
 	"go/ast"
 	"go/types"
-	"maps"
 	"sync"
 
 	"golang.org/x/tools/go/analysis"
@@ -15,18 +14,24 @@ import (
 
 type structFieldInitOrder struct {
 	mu sync.RWMutex
-	// all the struct specs of the codebase.
-	structsSpec map[internal.UniqueIdentifierStructKey]*internal.StructSpec
-	// analysis.Pass and struct instantiated indexed by package.
-	stateIndexByPkg map[*types.Package]state
+
+	structSpecsIndexedByKey map[internal.StructUniqueIdentifierKey]*internal.StructSpecs
+	structInstIndexedByPkg  map[*types.Package]*pkgStructInst
+}
+
+type pkgStructInst struct {
+	pass    *analysis.Pass
+	structs []internal.IStructInst
+}
+
+func (s *pkgStructInst) append(si internal.IStructInst) {
+	s.structs = append(s.structs, si)
 }
 
 func NewAnalyzer() *analysis.Analyzer {
-	structsSpec := make(map[internal.UniqueIdentifierStructKey]*internal.StructSpec)
-	st := make(map[*types.Package]state)
 	s := structFieldInitOrder{
-		structsSpec:     structsSpec,
-		stateIndexByPkg: st,
+		structSpecsIndexedByKey: make(map[internal.StructUniqueIdentifierKey]*internal.StructSpecs),
+		structInstIndexedByPkg:  make(map[*types.Package]*pkgStructInst),
 	}
 
 	return &analysis.Analyzer{
@@ -45,8 +50,6 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 		return nil, nil
 	}
 
-	fh := internal.NewStructsHolder(pass.Pkg.Path())
-
 	nodeFilter := []ast.Node{
 		(*ast.File)(nil),
 		(*ast.ImportSpec)(nil),
@@ -54,36 +57,45 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 		(*ast.CompositeLit)(nil),
 	}
 
+	importsSpec := make([]*ast.ImportSpec, 0)
 	insp.Preorder(nodeFilter, func(n ast.Node) {
 		switch node := n.(type) {
 		case *ast.File:
-			fh.SetFile(node)
+			importsSpec = nil
 		case *ast.ImportSpec:
-			fh.AddImportSpec(node)
+			importsSpec = append(importsSpec, node)
 		case *ast.TypeSpec:
-			fh.AddTypeSpec(node)
+			{
+				s.mu.Lock()
+				defer s.mu.Unlock()
+				if ss, ok := internal.NewStructSpecs(pass, node); ok {
+					s.structSpecsIndexedByKey[ss.UniqueKey] = ss
+				}
+			}
+
 		case *ast.CompositeLit:
-			fh.AddCompositeLit(node)
+			if si, ok := internal.NewIStructInst(pass.Pkg.Path(), importsSpec, node); ok {
+				{
+					s.mu.Lock()
+					defer s.mu.Unlock()
+					// add si
+					if pkgKey, pkgFound := s.structInstIndexedByPkg[pass.Pkg]; pkgFound {
+						pkgKey.append(si)
+					} else {
+						s.structInstIndexedByPkg[pass.Pkg] = &pkgStructInst{
+							pass:    pass,
+							structs: []internal.IStructInst{si},
+						}
+					}
+				}
+			}
 		}
 	})
 
+	importsSpec = nil
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	maps.Copy(s.structsSpec, fh.StructsSpec())
-	if len(fh.StructInst()) > 0 {
-		if _, ok := s.stateIndexByPkg[pass.Pkg]; !ok {
-			s.stateIndexByPkg[pass.Pkg] = state{
-				pass:        pass,
-				structInsts: fh.StructInst(),
-			}
-		} else {
-			st := s.stateIndexByPkg[pass.Pkg]
-			st.copy(fh.StructInst())
-		}
-	}
-
-	fh.CheckDotImports()
-
 	s.analyze()
 
 	//nolint:nilnil //any, error
@@ -91,23 +103,25 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 }
 
 func (s *structFieldInitOrder) analyze() {
-	for _, st := range s.stateIndexByPkg {
-		for key, structInsts := range st.structInsts {
-			if structSpec, ok := s.structsSpec[key]; ok {
-				for _, structInst := range structInsts {
-					internal.ReportIfStructFieldsNotInOrder(st.pass, structSpec, structInst)
-				}
-				delete(st.structInsts, key)
+	for _, st := range s.structInstIndexedByPkg {
+		notProcessedStructs := make([]internal.IStructInst, 0)
+		for _, structInst := range st.structs {
+			var structUniqueIdentifierKey internal.StructUniqueIdentifierKey
+			switch si := structInst.(type) {
+			case *internal.StructInstWithAlias:
+				structUniqueIdentifierKey = si.GetStructUniqueIdentifierKey()
+			case *internal.StructInstInSamePkgStructDecl:
+				structUniqueIdentifierKey = si.GetStructUniqueIdentifierKey()
+			default:
+				continue
+			}
+
+			if structSpec, ok := s.structSpecsIndexedByKey[structUniqueIdentifierKey]; ok {
+				internal.ReportIfStructFieldsNotInOrder(st.pass, structSpec, structInst)
+			} else {
+				notProcessedStructs = append(notProcessedStructs, structInst)
 			}
 		}
+		st.structs = notProcessedStructs
 	}
-}
-
-type state struct {
-	pass        *analysis.Pass
-	structInsts map[internal.UniqueIdentifierStructKey][]*internal.StructInst
-}
-
-func (s *state) copy(c map[internal.UniqueIdentifierStructKey][]*internal.StructInst) {
-	maps.Copy(s.structInsts, c)
 }

@@ -13,7 +13,7 @@ func TestAnalyzer(t *testing.T) {
 	}{
 		{
 			desc:     "default",
-			patterns: "simple",
+			patterns: "simple/...",
 		},
 		{
 			desc:     "imports",
