@@ -7,7 +7,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-func ReportIfStructFieldsNotInOrder(pass *analysis.Pass, structSpecs *StructSpecs, si IStructInst) {
+func ReportIfStructFieldsNotInOrder(pass *analysis.Pass, structSpecs *StructSpecs, si StructInst) {
 	instantiatedFieldNames := si.GetFieldNames()
 	expectedFieldOrder := slices.DeleteFunc(structSpecs.GetFieldNames(), func(s string) bool {
 		return !slices.Contains(instantiatedFieldNames, s)

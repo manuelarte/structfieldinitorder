@@ -6,14 +6,14 @@ import (
 	"strings"
 )
 
-type IStructInst interface {
+type StructInst interface {
 	ast.Node
 
 	GetFieldNames() []string
 	x()
 }
 
-func NewIStructInst(pkgPath string, importsSpec []*ast.ImportSpec, cl *ast.CompositeLit) (IStructInst, bool) {
+func NewStructInst(pkgPath string, importsSpec []*ast.ImportSpec, cl *ast.CompositeLit) (StructInst, bool) {
 	bsi, ok := newBaseStructInst(cl)
 	if !ok {
 		return nil, false
