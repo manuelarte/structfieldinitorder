@@ -7,9 +7,8 @@ import (
 )
 
 type StructInst interface {
-	ast.Node
-
-	GetFieldNames() []string
+	GetCompositeLit() *ast.CompositeLit
+	GetKeyValueExpr() []*ast.KeyValueExpr
 	x()
 }
 
@@ -58,24 +57,16 @@ func newBaseStructInst(cl *ast.CompositeLit) (*baseStructInst, bool) {
 	}, true
 }
 
-func (si *baseStructInst) GetFieldNames() []string {
-	names := make([]string, 0)
-	kvs := si.getKeyValueExpr()
-	for _, kv := range kvs {
-		if ident, ok := kv.Key.(*ast.Ident); ok {
-			names = append(names, ident.Name)
-		}
-	}
-	return names
+func (si *baseStructInst) GetCompositeLit() *ast.CompositeLit {
+	return si.CompositeLit
 }
 
-func (si *baseStructInst) getKeyValueExpr() []*ast.KeyValueExpr {
-	kv := make([]*ast.KeyValueExpr, len(si.Elts))
-	for i, elt := range si.Elts {
-		//nolint:errcheck // already checked
-		kv[i] = elt.(*ast.KeyValueExpr)
-	}
-	return kv
+func (si *baseStructInst) GetKeyValueExpr() []*ast.KeyValueExpr {
+	kvs, _ := transform(si.Elts, func(i ast.Expr) (*ast.KeyValueExpr, error) {
+		//nolint:errcheck // checked before
+		return i.(*ast.KeyValueExpr), nil
+	})
+	return kvs
 }
 
 func (*baseStructInst) x() {}

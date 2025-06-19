@@ -1,0 +1,19 @@
+package main
+
+import "time"
+
+type PersonComments struct {
+	Name      string
+	Surname   string
+	Birthdate time.Time
+}
+
+func mainComments() {
+	_ = PersonComments{ // want `fields for struct "PersonComments" are not instantiated in order`
+		Name:    "John",
+		// the surname is important
+		Surname: "Doe",
+		// the birthdate is now
+		Birthdate: time.Now(),
+	}
+}

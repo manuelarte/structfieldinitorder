@@ -33,3 +33,23 @@ func TestAnalyzer(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalyzerWithSuggestedFix(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		patterns string
+	}{
+		{
+			desc:     "default",
+			patterns: "simple-fix/...",
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.desc, func(t *testing.T) {
+			a := NewAnalyzer()
+
+			analysistest.RunWithSuggestedFixes(t, analysistest.TestData(), a, test.patterns)
+		})
+	}
+}

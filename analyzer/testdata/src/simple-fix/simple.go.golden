@@ -1,0 +1,31 @@
+package main
+
+import (
+	"time"
+)
+
+type Person struct {
+	Name      string
+	Surname   string
+	Birthdate time.Time
+}
+
+func mainSimple() {
+	_ = Person{ // want `fields for struct "Person" are not instantiated in order`
+		Name:      "John",
+		Surname:   "Doe",
+	    Birthdate: time.Now(),
+	}
+
+	_ = &Person{ // want `fields for struct "Person" are not instantiated in order`
+		Name:      "John",
+		Surname:   "Doe",
+		Birthdate: time.Now(),
+	}
+
+	_ = &Person{
+		Name:      "John",
+		Surname:   "Doe",
+		Birthdate: time.Now(),
+	}
+}
