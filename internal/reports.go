@@ -13,8 +13,6 @@ import (
 )
 
 func ReportIfStructFieldsNotInOrder(pass *analysis.Pass, structSpecs *StructSpecs, si StructInst) {
-	// TODO(manuelarte): THINK ABOUT USING iterators, I need to iterate over the key value pair
-	// filter the idents, and then that's the suggested fix
 	kvs := si.GetKeyValueExpr()
 	if slices.ContainsFunc(kvs, func(kv *ast.KeyValueExpr) bool {
 		_, ok := kv.Key.(*ast.Ident)
@@ -85,9 +83,10 @@ func toTextEdits(fset *token.FileSet, sorted []*ast.KeyValueExpr, original []*as
 		var buf bytes.Buffer
 		// TODO(manuelarte): handle error later
 		_ = format.Node(&buf, fset, kv)
+		origin := original[i]
 		toReturn[i] = analysis.TextEdit{
-			Pos:     original[i].Pos(),
-			End:     original[i].End(),
+			Pos:     origin.Pos(),
+			End:     origin.End(),
 			NewText: buf.Bytes(),
 		}
 	}
