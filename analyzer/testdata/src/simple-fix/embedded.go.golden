@@ -1,0 +1,33 @@
+package main
+
+import (
+	"time"
+)
+
+type PersonEmbedded struct {
+	int
+	Name      string
+	Surname   string
+	Birthdate time.Time
+}
+
+func mainEmbedded() {
+	_ = PersonEmbedded{ // want `fields for struct "PersonEmbedded" are not instantiated in order`
+		int:       1,
+		Name:      "John",
+		Surname:   "Doe",
+		Birthdate: time.Now(),
+	}
+
+	_ = &PersonEmbedded{ // want `fields for struct "PersonEmbedded" are not instantiated in order`
+		Name:      "John",
+		Surname:   "Doe",
+		Birthdate: time.Now(),
+	}
+
+	_ = &PersonEmbedded{
+		Name:      "John",
+		Surname:   "Doe",
+		Birthdate: time.Now(),
+	}
+}
