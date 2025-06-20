@@ -1,6 +1,6 @@
 #!/bin/sh
 
-markdownlint .
+markdownlint-cli2 ./**/*.md
 codespell .
 yamllint .
 go test ./...
