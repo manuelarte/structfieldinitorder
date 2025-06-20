@@ -23,6 +23,10 @@ func TestAnalyzer(t *testing.T) {
 			desc:     "dot imports",
 			patterns: "dotimports/...",
 		},
+		{
+			desc:     "special cases",
+			patterns: "specialcases/...",
+		},
 	}
 
 	for _, test := range testCases {

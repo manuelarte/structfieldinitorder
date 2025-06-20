@@ -47,7 +47,11 @@ func newBaseStructInst(cl *ast.CompositeLit) (*baseStructInst, bool) {
 		return nil, false
 	}
 	for _, elt := range cl.Elts {
-		if _, ok := elt.(*ast.KeyValueExpr); !ok {
+		kv, ok := elt.(*ast.KeyValueExpr)
+		if !ok {
+			return nil, false
+		}
+		if !valueAllowedExpr(kv.Value) {
 			return nil, false
 		}
 	}
@@ -218,4 +222,19 @@ func getPkgImportPath(is *ast.ImportSpec) (string, bool) {
 		return is.Path.Value[1 : len(is.Path.Value)-1], true
 	}
 	return "", false
+}
+
+func valueAllowedExpr(e ast.Expr) bool {
+	switch n := e.(type) {
+	case *ast.BasicLit:
+		return true
+	case *ast.CompositeLit:
+		return true
+	case *ast.SelectorExpr:
+		return true
+	case *ast.CallExpr:
+		return valueAllowedExpr(n.Fun)
+	default:
+		return false
+	}
 }
