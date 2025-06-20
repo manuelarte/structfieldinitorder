@@ -3,16 +3,23 @@ package internal
 import (
 	"bytes"
 	"fmt"
+	"github.com/dave/dst"
+	"github.com/dave/dst/decorator"
 	"go/ast"
 	"go/format"
 	"go/token"
 	"maps"
+	"os"
 	"slices"
 
 	"golang.org/x/tools/go/analysis"
 )
 
 func ReportIfStructFieldsNotInOrder(pass *analysis.Pass, structSpecs *StructSpecs, si StructInst) {
+
+	// Create a new decorator, which will track the mapping between ast and dst nodes
+	dec := decorator.NewDecorator(pass.Fset)
+
 	kvs := si.GetKeyValueExpr()
 	if slices.ContainsFunc(kvs, func(kv *ast.KeyValueExpr) bool {
 		_, ok := kv.Key.(*ast.Ident)
@@ -36,10 +43,8 @@ func ReportIfStructFieldsNotInOrder(pass *analysis.Pass, structSpecs *StructSpec
 	}
 	if report {
 		cl := si.GetCompositeLit()
-		casted, _ := transform(sortedKeyValueOrder, func(i *ast.KeyValueExpr) (ast.Expr, error) {
-			return i, nil
-		})
-		cl.Elts = casted
+		dstCl, _ := dec.DecorateNode(cl)
+		dst.Fprint(os.Stdout, dstCl, ast.NotNilFilter)
 		diag := analysis.Diagnostic{
 			Pos: cl.Pos(),
 			End: cl.End(),
@@ -49,7 +54,7 @@ func ReportIfStructFieldsNotInOrder(pass *analysis.Pass, structSpecs *StructSpec
 			SuggestedFixes: []analysis.SuggestedFix{
 				{
 					Message:   "Sorted struct instantiation fields.",
-					TextEdits: toTextEdits(pass.Fset, sortedKeyValueOrder, kvs),
+					TextEdits: toTextEdits(pass.Fset, sortedKeyValueOrder, cl, dstCl.(*dst.CompositeLit)),
 				},
 			},
 		}
@@ -77,13 +82,15 @@ func mapKeys(myMap map[string]*ast.KeyValueExpr) []string {
 	return keys
 }
 
-func toTextEdits(fset *token.FileSet, sorted []*ast.KeyValueExpr, original []*ast.KeyValueExpr) []analysis.TextEdit {
+func toTextEdits(fset *token.FileSet, sorted []*ast.KeyValueExpr, original *ast.CompositeLit, originalWithComments *dst.CompositeLit) []analysis.TextEdit {
 	toReturn := make([]analysis.TextEdit, len(sorted))
 	for i, kv := range sorted {
 		var buf bytes.Buffer
+		dstOrigin := originalWithComments.Elts[i].(*dst.KeyValueExpr)
+		dst.Fprint(os.Stdout, dstOrigin, ast.NotNilFilter)
+		origin := original.Elts[i].(*ast.KeyValueExpr)
 		// TODO(manuelarte): handle error later
 		_ = format.Node(&buf, fset, kv)
-		origin := original[i]
 		toReturn[i] = analysis.TextEdit{
 			Pos:     origin.Pos(),
 			End:     origin.End(),
