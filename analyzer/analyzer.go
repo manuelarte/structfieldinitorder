@@ -21,10 +21,10 @@ type structFieldInitOrder struct {
 
 type pkgStructInst struct {
 	pass    *analysis.Pass
-	structs []internal.IStructInst
+	structs []internal.StructInst
 }
 
-func (s *pkgStructInst) append(si internal.IStructInst) {
+func (s *pkgStructInst) append(si internal.StructInst) {
 	s.structs = append(s.structs, si)
 }
 
@@ -44,6 +44,8 @@ func NewAnalyzer() *analysis.Analyzer {
 }
 
 func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !found {
 		//nolint:nilnil // impossible case.
@@ -57,8 +59,6 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 		(*ast.CompositeLit)(nil),
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	importsSpec := make([]*ast.ImportSpec, 0)
 	insp.Preorder(nodeFilter, func(n ast.Node) {
 		switch node := n.(type) {
@@ -74,7 +74,7 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 			}
 
 		case *ast.CompositeLit:
-			if si, ok := internal.NewIStructInst(pass.Pkg.Path(), importsSpec, node); ok {
+			if si, ok := internal.NewStructInst(pass.Pkg.Path(), importsSpec, node); ok {
 				{
 					// add si
 					if pkgKey, pkgFound := s.structInstIndexedByPkg[pass.Pkg]; pkgFound {
@@ -82,7 +82,7 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 					} else {
 						s.structInstIndexedByPkg[pass.Pkg] = &pkgStructInst{
 							pass:    pass,
-							structs: []internal.IStructInst{si},
+							structs: []internal.StructInst{si},
 						}
 					}
 				}
@@ -99,7 +99,7 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 
 func (s *structFieldInitOrder) analyze() {
 	for _, st := range s.structInstIndexedByPkg {
-		notProcessedStructs := make([]internal.IStructInst, 0)
+		notProcessedStructs := make([]internal.StructInst, 0)
 		for _, structInst := range st.structs {
 			var structUniqueIdentifierKey internal.StructUniqueIdentifierKey
 			switch si := structInst.(type) {
