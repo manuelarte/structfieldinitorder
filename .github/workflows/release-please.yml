@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev # to test
 
 permissions:
   contents: write
@@ -17,5 +18,7 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v4
         with:
-          release-type: go
-          skip-labeling: 'true'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: .github/release-please-config.json
+          target-branch: ${{ github.ref_name }} # to test
+
