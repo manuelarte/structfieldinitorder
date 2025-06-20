@@ -44,6 +44,8 @@ func NewAnalyzer() *analysis.Analyzer {
 }
 
 func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !found {
 		//nolint:nilnil // impossible case.
@@ -57,8 +59,6 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 		(*ast.CompositeLit)(nil),
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	importsSpec := make([]*ast.ImportSpec, 0)
 	insp.Preorder(nodeFilter, func(n ast.Node) {
 		switch node := n.(type) {
