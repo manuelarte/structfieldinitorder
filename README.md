@@ -4,7 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/manuelarte/structfieldinitorder)](https://goreportcard.com/report/github.com/manuelarte/structfieldinitorder)
 ![version](https://img.shields.io/github/v/release/manuelarte/structfieldinitorder)
 
-This linter checks whether when a struct is instantiated, the fields order follows the same order as in the struct declaration.
+This linter checks whether when a struct instantiates, the fields order follows the same order as in the struct declaration.
 
 ## ⬇️  Getting Started
 
