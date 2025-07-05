@@ -1,0 +1,5 @@
+version: v2.2.1
+plugins:
+  # a plugin from local source
+  - module: "github.com/manuelarte/structfieldinitorder"
+    path: ../../

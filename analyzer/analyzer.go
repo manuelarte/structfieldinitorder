@@ -46,6 +46,7 @@ func NewAnalyzer() *analysis.Analyzer {
 func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	insp, found := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
 	if !found {
 		//nolint:nilnil // impossible case.
@@ -89,6 +90,7 @@ func (s *structFieldInitOrder) run(pass *analysis.Pass) (any, error) {
 			}
 		}
 	})
+
 	importsSpec = nil
 
 	s.analyze()
@@ -120,6 +122,7 @@ func (s *structFieldInitOrder) analyze() {
 				notProcessedStructs = append(notProcessedStructs, structInst)
 			}
 		}
+
 		st.structs = notProcessedStructs
 	}
 }

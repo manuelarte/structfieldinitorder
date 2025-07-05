@@ -19,6 +19,7 @@ func (uk StructUniqueIdentifierKey) FullImportPath(modName string) string {
 	if modName == "" {
 		return uk.Pkg
 	}
+
 	return fmt.Sprintf("%s/%s", modName, uk.Pkg)
 }
 
@@ -43,6 +44,7 @@ func NewStructSpecs(pass *analysis.Pass, ts *ast.TypeSpec) (*StructSpecs, bool) 
 			mod: pass.Module.Path,
 		}, true
 	}
+
 	return nil, false
 }
 
@@ -53,6 +55,7 @@ func (ss *StructSpecs) FullImportPath() string {
 
 func (ss *StructSpecs) GetFieldNames() []string {
 	names := make([]string, 0)
+
 	fields := ss.getStructType().Fields.List
 	for _, field := range fields {
 		if field.Names != nil {

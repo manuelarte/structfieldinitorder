@@ -17,6 +17,7 @@ func NewStructInst(pkgPath string, importsSpec []*ast.ImportSpec, cl *ast.Compos
 	if !ok {
 		return nil, false
 	}
+
 	switch cl.Type.(type) {
 	case *ast.Ident:
 		// this means the struct is either declared in the same package or there are dot imports.
@@ -26,9 +27,11 @@ func NewStructInst(pkgPath string, importsSpec []*ast.ImportSpec, cl *ast.Compos
 				dotImports = append(dotImports, spec)
 			}
 		}
+
 		if len(dotImports) == 0 {
 			return newStructInstInSamePkgStructDecl(pkgPath, bsi)
 		}
+
 		return newStructInstWithDotImports(pkgPath, dotImports, bsi)
 	case *ast.SelectorExpr:
 		// this means the struct is declared in a different package
@@ -46,11 +49,13 @@ func newBaseStructInst(cl *ast.CompositeLit) (*baseStructInst, bool) {
 	if len(cl.Elts) == 0 {
 		return nil, false
 	}
+
 	for _, elt := range cl.Elts {
 		kv, ok := elt.(*ast.KeyValueExpr)
 		if !ok {
 			return nil, false
 		}
+
 		if !valueAllowedExpr(kv.Value) {
 			return nil, false
 		}
@@ -70,6 +75,7 @@ func (si *baseStructInst) GetKeyValueExpr() []*ast.KeyValueExpr {
 		//nolint:errcheck // checked before
 		return i.(*ast.KeyValueExpr), nil
 	})
+
 	return kvs
 }
 
@@ -114,6 +120,7 @@ func newStructInstWithAlias(
 	if selectorExpr, ok := si.Type.(*ast.SelectorExpr); ok {
 		if xIdent, isXIdent := selectorExpr.X.(*ast.Ident); isXIdent {
 			pkgAlias := xIdent.Name
+
 			for _, is := range importsSpec {
 				if importAlias, found := getPkgImportAlias(is); found {
 					if importAlias == pkgAlias {
@@ -127,12 +134,14 @@ func newStructInstWithAlias(
 			}
 		}
 	}
+
 	return nil, false
 }
 
 // GetStructUniqueIdentifierKey returns the unique identifier where the struct was declared.
 func (si *StructInstWithAlias) GetStructUniqueIdentifierKey() StructUniqueIdentifierKey {
 	importPath, _ := getPkgImportPath(si.ImportSpec)
+
 	return StructUniqueIdentifierKey{
 		Pkg:  importPath,
 		Name: si.Name,
@@ -150,6 +159,7 @@ func newStructInstInSamePkgStructDecl(
 			ImportPath:     pkgPath,
 		}, true
 	}
+
 	return nil, false
 }
 
@@ -174,6 +184,7 @@ func newStructInstWithDotImports(
 			DotImports:     dotImports,
 		}, true
 	}
+
 	return nil, false
 }
 
@@ -187,16 +198,19 @@ func (si *StructInstWithDotImports) GetMatchingStructSpecs(
 	}]; ok {
 		return ss, true
 	}
+
 	for _, importSpec := range si.DotImports {
 		importPath, foundImportPath := getPkgImportPath(importSpec)
 		if !foundImportPath {
 			continue
 		}
+
 		key := StructUniqueIdentifierKey{Pkg: importPath, Name: si.Name}
 		if ss, ok := structSpecsIndexed[key]; ok {
 			return ss, true
 		}
 	}
+
 	return &StructSpecs{}, false
 }
 
@@ -204,15 +218,19 @@ func getPkgImportAlias(is *ast.ImportSpec) (string, bool) {
 	if is.Path != nil && is.Path.Kind == token.STRING {
 		// remove ""
 		alias := is.Path.Value[1 : len(is.Path.Value)-1]
+
 		indexDel := strings.LastIndex(alias, "/")
 		if indexDel != -1 {
 			alias = alias[indexDel+1:]
 		}
+
 		if is.Name != nil && is.Name.Name != "." {
 			alias = is.Name.Name
 		}
+
 		return alias, true
 	}
+
 	return "", false
 }
 
@@ -221,6 +239,7 @@ func getPkgImportPath(is *ast.ImportSpec) (string, bool) {
 		// remove ""
 		return is.Path.Value[1 : len(is.Path.Value)-1], true
 	}
+
 	return "", false
 }
 
