@@ -33,7 +33,6 @@ type (
 )
 
 func NewStructSpecs(pass *analysis.Pass, ts *ast.TypeSpec) (*StructSpecs, bool) {
-	// TODO(manuelarte): after checking what's needed, change signature to pass only needed parameters.
 	if _, ok := ts.Type.(*ast.StructType); ok {
 		return &StructSpecs{
 			TypeSpec: ts,
