@@ -1,6 +1,7 @@
-# Struct Field Init Order
+# 🧐 Struct Field Init Order 🫡
 
 [![Go](https://github.com/manuelarte/structfieldinitorder/actions/workflows/go.yml/badge.svg)](https://github.com/manuelarte/structfieldinitorder/actions/workflows/go.yml)
+[![PR checks](https://github.com/manuelarte/structfieldinitorder/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/manuelarte/structfieldinitorder/actions/workflows/pr-checks.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/manuelarte/structfieldinitorder)](https://goreportcard.com/report/github.com/manuelarte/structfieldinitorder)
 [![version](https://img.shields.io/github/v/release/manuelarte/structfieldinitorder)](https://img.shields.io/github/v/release/manuelarte/structfieldinitorder)
 
@@ -50,7 +51,7 @@ type Person struct {
 <tr><td>
 
 ```go
-// ❌ Not following Name, Surname, Birthdate 
+// ❌ Not following Name, Surname, Birthdate order.
 var Me = Person {
   Surname: "Doe",
   Name: "John",
@@ -61,7 +62,7 @@ var Me = Person {
 </td><td>
 
 ```go
-// ✅ Name, Surname, Birthdate
+// ✅ Name, Surname, Birthdate.
 var Me = Person {
   Name: "John",
   Surname: "Doe",
