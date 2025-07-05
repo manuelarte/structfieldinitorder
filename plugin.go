@@ -26,5 +26,5 @@ func (p structFieldInitOrderPlugin) BuildAnalyzers() ([]*analysis.Analyzer, erro
 }
 
 func (p structFieldInitOrderPlugin) GetLoadMode() string {
-	return register.LoadModeSyntax
+	return register.LoadModeTypesInfo
 }
