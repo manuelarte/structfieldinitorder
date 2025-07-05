@@ -1,0 +1,9 @@
+{
+  "extra-files": [
+    {
+      "type": "yaml",
+      "path": "./examples/golangciplugin/.custom-gcl.yml",
+      "jsonpath": "$.plugins[0].version"
+    }
+  ]
+}
