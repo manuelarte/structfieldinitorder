@@ -7,7 +7,9 @@ func transform[I, O any](ii []I, f func(i I) (O, error)) ([]O, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		oo[i] = o
 	}
+
 	return oo, nil
 }

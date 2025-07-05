@@ -1,0 +1,11 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - structfieldinitorder
+  settings:
+    custom:
+      structfieldinitorder:
+        type: "module"
+        description: "linter that checks that in a struct initialization, the fields are declared in the same order as they are defined in the struct declaration."
