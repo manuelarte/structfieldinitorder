@@ -19,4 +19,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: go
-          config-file: '.github/release-please-config.json'
+          skip-labeling: 'true'
