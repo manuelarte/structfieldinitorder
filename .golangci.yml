@@ -144,7 +144,7 @@ linters:
         - name: filename-format
           arguments:
             - ^[a-z][_a-z0-9]*.go$
-        - name: var-naming # badPackageNames not working
+        - name: var-naming  # badPackageNames not working
     sloglint:
       no-global: all
       context: scope

@@ -3,5 +3,6 @@
 markdownlint-cli2 ./**/*.md
 codespell .
 yamllint .
+typos .
 go test --cover -timeout=300s -parallel=16 ./...
 
