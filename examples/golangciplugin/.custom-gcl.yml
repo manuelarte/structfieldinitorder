@@ -1,5 +1,6 @@
 version: v2.2.1
 plugins:
-  # a plugin from local source
+  # a plugin from a Go proxy
   - module: "github.com/manuelarte/structfieldinitorder"
-    path: ../../
+    import: "github.com/manuelarte/structfieldinitorder/golangci"
+    version: v0.1.1-rc1
