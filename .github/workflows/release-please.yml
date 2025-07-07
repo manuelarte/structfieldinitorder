@@ -19,5 +19,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: go
           skip-labeling: "true"
-          include-v-in-tag: "true"
-          config-file: "release-please-config.json"
+          config-file: ".release-please-config.json"

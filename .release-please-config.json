@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "packages": {
+    ".": {
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "yaml",
+          "path": "./examples/golangciplugin/.custom-gcl.yml",
+          "jsonpath": "$.plugins[0].version"
+        }
+      ]
+    }
+  }
+}
